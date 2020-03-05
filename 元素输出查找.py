@@ -2,13 +2,14 @@
 #encoding:utf-8
 '''
 @File    :   元素输出查找.py
-@Time    :   2020/03/05 13:16:36
-@Author  :   DesignerA 
+@Time    :   2020/03/05 14:01:46
+@Author  :   Best_Lilys 
 @Version :   1.0
-@Contact :   DesignerA@qq.com
-@WebSite :   www.cnblogs.com/DesignerA
+@Contact :   2429715377@qq.com
+@WebSite :   https://github.com/BestLilys
 '''
 # Start typing your code from here
+
 import math
 print("奇数:",end=' ')
 for i in range(50):
