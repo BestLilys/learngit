@@ -17,6 +17,6 @@ while(True):
     if(string==''):
         break
 print(mylist)
-with open('test.txt','w') as f:
+with open('input.txt','w') as f:
         for i in mylist:
             f.write(i+'\n')
