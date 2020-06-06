@@ -19,7 +19,7 @@ class human(object):
         target.hp=target.hp-self.ak
         print('%s受到%s攻击,还剩%d血'%(target.name,self.name,target.hp))
         if target.hp<=0:
-            print('%s死亡'%taget.name)
+            print('%s死亡'%target.name)
             return 1
         return 0
 class dog(object):
