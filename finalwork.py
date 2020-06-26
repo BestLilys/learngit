@@ -30,18 +30,22 @@ class JobGet(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.joblist= []
+        self.list_name=''
+        self.database_name=''
+        self.User=''
+        self.password=''
     def ave_salary(self):
         salary_list=[]
         count=0
         s=0
         mydb = mysql.connector.connect(
             host="localhost",
-            user="root",
-            passwd="root",
-            db="job_database"
+            user=self.User,
+            passwd=self.password,
+            db=self.database_name
         )
         mycursor = mydb.cursor()
-        mycursor.execute("SELECT salary FROM job_list where jlocation like '%北京%'")
+        mycursor.execute("SELECT salary FROM {} where jlocation like '%北京%'".format(self.list_name))
         myresult=mycursor.fetchall()
         for x in myresult:
             count=count+1
@@ -54,28 +58,39 @@ class JobGet(threading.Thread):
                 s=s+((float(result_list[0])+float(result_list[1]))/10)*12
         return s/(count*2)
     def db_create(self):
-        mydb = mysql.connector.connect(
+        self.User=input('请输入连接数据库的用户名:')
+        self.password=input('请输入连接数据库的密码:')
+        try:
+            mydb = mysql.connector.connect(
             host="localhost",
-            user="root",
-            passwd="root",
-        )
-        mycursor=mydb.cursor()
-        mycursor.execute("CREATE DATABASE job_database")
+            user=self.User,
+            passwd=self.password,
+            )
+            mycursor=mydb.cursor()
+            self.database_name=input('请输入创建的数据库名:')
+            mycursor.execute("CREATE DATABASE %s"%(self.database_name))
+        except Exception:
+            print('密码错误!')
     def db_insert(self):
-        mydb = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="root",
-            db="job_database"
-        )
-        mycursor = mydb.cursor()
-        mycursor.execute("CREATE TABLE job_list(job VARCHAR(50),jlocation varchar(50) ,salary varchar(50));")
-        sql="INSERT INTO job_list(job,jlocation,salary) VALUES(%s,%s,%s)"
-        for j in range(len(self.joblist)):
-            val=(self.joblist[j]['job'],self.joblist[j]['location'],self.joblist[j]['salary'])
-            mycursor.execute(sql,val)
-            mydb.commit()
+        try:
+            mydb = mysql.connector.connect(
+                host="localhost",
+                user=self.User,
+                passwd=self.password,
+                db=self.database_name
+            )
+            mycursor = mydb.cursor()
+            self.list_name=input('请输入创建的表名:')
+            mycursor.execute("CREATE TABLE %s(job VARCHAR(50),jlocation varchar(50) ,salary varchar(50));"%(self.list_name))
+            sql="INSERT INTO {}(job,jlocation,salary) VALUES(%s,%s,%s)".format(self.list_name)
+            for j in range(len(self.joblist)):
+                val=(self.joblist[j]['job'],self.joblist[j]['location'],self.joblist[j]['salary'])
+                mycursor.execute(sql,val)
+                mydb.commit()
+        except Exception:
+            print('创建表失败!')
     def run(self):
+        print('{}:正在爬取,请稍等!'.format(self.name))
         while queue.qsize()>0:
             threadLock.acquire()
             url=queue.get()
@@ -100,9 +115,13 @@ class JobGet(threading.Thread):
                 except Exception:
                     pass
             threadLock.release()
-        self.db_create()
-        self.db_insert()
-        print(r'北京地区平均工资:%.1f万/年'%(self.ave_salary()))
+        try:
+            self.db_create()
+            self.db_insert()    
+            print('爬取成功，数据存储在{}数据库中的{}表中'.format(self.database_name,self.list_name))
+            print(r'北京地区平均工资:%.1f万/年'%(self.ave_salary()))
+        except Exception:
+            pass
 if __name__ == "__main__":
     project1=JobGet()
     project2=JobGet()
