@@ -71,6 +71,19 @@ class JobGet(threading.Thread):
             mycursor.execute("CREATE DATABASE %s"%(self.database_name))
         except Exception:
             print('密码错误!')
+    def list_create(self):
+        try:
+            mydb = mysql.connector.connect(
+            host="localhost",
+            user=self.User,
+            passwd=self.password,
+            db=self.database_name
+            )
+            mycursor=mydb.cursor()
+            self.list_name=input('请输入创建的表名:')
+            mycursor.execute("CREATE TABLE %s(job VARCHAR(50),jlocation varchar(50) ,salary varchar(50));"%(self.list_name))
+        except Exception:
+            print('密码错误!')
     def db_insert(self):
         try:
             mydb = mysql.connector.connect(
@@ -80,8 +93,6 @@ class JobGet(threading.Thread):
                 db=self.database_name
             )
             mycursor = mydb.cursor()
-            self.list_name=input('请输入创建的表名:')
-            mycursor.execute("CREATE TABLE %s(job VARCHAR(50),jlocation varchar(50) ,salary varchar(50));"%(self.list_name))
             sql="INSERT INTO {}(job,jlocation,salary) VALUES(%s,%s,%s)".format(self.list_name)
             for j in range(len(self.joblist)):
                 val=(self.joblist[j]['job'],self.joblist[j]['location'],self.joblist[j]['salary'])
@@ -89,8 +100,8 @@ class JobGet(threading.Thread):
                 mydb.commit()
         except Exception:
             print('创建表失败!')
-    def run(self):
-        print('{}:正在爬取,请稍等!'.format(self.name))
+    def job_get(self,tname):
+        print('{}:正在爬取,请稍等!'.format(tname))
         while queue.qsize()>0:
             threadLock.acquire()
             url=queue.get()
@@ -115,29 +126,20 @@ class JobGet(threading.Thread):
                 except Exception:
                     pass
             threadLock.release()
-        try:
-            self.db_create()
-            self.db_insert()    
-            print('爬取成功，数据存储在{}数据库中的{}表中'.format(self.database_name,self.list_name))
-            print(r'北京地区平均工资:%.1f万/年'%(self.ave_salary()))
-        except Exception:
-            pass
 if __name__ == "__main__":
-    project1=JobGet()
-    project2=JobGet()
-    project3=JobGet()
-    project4=JobGet()
-    project5=JobGet()
-    project1.start()
-    project2.start()
-    project3.start()
-    project4.start()
-    project5.start()
-    threads.append(project1)
-    threads.append(project2)
-    threads.append(project3)
-    threads.append(project4)
-    threads.append(project5)
+    project=JobGet()
+    project.db_create()
+    project.list_create()
+    for i in range(5):
+        t=threading.Thread(target=project.job_get('线程%d'%(i+1)))
+        threads.append(t)
+    for t in threads:
+        t.start()
     for t in threads:
         t.join()
-    
+    try:
+            project.db_insert()    
+            print('爬取成功，数据存储在{}数据库中的{}表中'.format(project.database_name,project.list_name))
+            print(r'北京地区平均工资:%.1f万/年'%(project.ave_salary()))
+    except Exception:
+        pass
